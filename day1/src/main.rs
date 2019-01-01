@@ -2,9 +2,9 @@ use std::collections::HashSet;
 use std::io;
 use std::io::Read;
 
-use crate::utils::Result;
+type Result<T> = std::result::Result<T, Box<std::error::Error>>;
 
-pub fn run() -> Result<()> {
+fn main() -> Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
@@ -39,3 +39,4 @@ fn part2(input: &str) -> Result<()> {
     println!("day1, part2: {}", acc);
     Ok(())
 }
+
