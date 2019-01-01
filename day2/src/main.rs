@@ -8,10 +8,12 @@ fn main() -> Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
-    part1(&input)
+    println!("day2, part1: {}", part1(&input));
+    println!("day2, part2: {}", part2(&input)?);
+    Ok(())
 }
 
-fn part1(input: &str) -> Result<()> {
+fn part1(input: &str) -> i32 {
     let mut nb_doubles = 0;
     let mut nb_triples = 0;
     let mut nb_occurs = HashMap::new();
@@ -36,6 +38,38 @@ fn part1(input: &str) -> Result<()> {
         nb_occurs.clear();
     }
 
-    println!("day2, part1: {}", nb_doubles * nb_triples);
-    Ok(())
+    nb_doubles * nb_triples
+}
+
+fn part2(input: &str) -> Result<String> {
+    let mut signatures = HashMap::new();
+
+    for (line_idx, line) in input.lines().enumerate() {
+        /* add all signatures of the word, ie all
+         * the words created when removing one letter.
+         */
+        for i in 0..line.len() {
+            let mut sig = String::new();
+            sig.push_str(&line[0..i]);
+            sig.push_str(&line[(i + 1)..line.len()]);
+
+            match signatures.get(&sig) {
+                Some(prev_idx) => {
+                    /* prevent matching against the same line,
+                     * can happen if a letter is repeated */
+                    if *prev_idx != line_idx {
+                        return Ok(sig);
+                    }
+                },
+                None => {
+                    signatures.insert(sig, line_idx);
+                },
+            }
+        }
+    }
+
+    Err(Box::new(io::Error::new(
+        io::ErrorKind::InvalidInput,
+        "could not find matching IDs",
+    )))
 }
