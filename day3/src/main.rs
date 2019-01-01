@@ -3,6 +3,7 @@ use std::io;
 use std::io::Read;
 use std::str::FromStr;
 use std::collections::HashMap;
+use std::iter::Iterator;
 
 use scan_fmt::scan_fmt;
 
@@ -25,10 +26,8 @@ fn part1(claims: &Vec<Claim>) -> usize {
     let mut grid: HashMap<(u32, u32), u32> = HashMap::new();
 
     for claim in claims {
-        for x in (claim.x)..(claim.x + claim.width) {
-            for y in (claim.y)..(claim.y + claim.height) {
-                *grid.entry((x, y)).or_insert(0) += 1;
-            }
+        for (x,y) in claim.iter_points() {
+            *grid.entry((x, y)).or_insert(0) += 1;
         }
     }
     grid.values().filter(|x| **x > 1).count()
@@ -56,5 +55,44 @@ impl FromStr for Claim {
             width: w.unwrap(),
             height: h.unwrap(),
         })
+    }
+}
+
+impl Claim {
+    fn iter_points(&self) -> ClaimIterator {
+        ClaimIterator {
+            x: self.x,
+            y: self.y,
+            x2: self.x + self.width,
+            y2: self.y + self.height,
+            yiter: self.y,
+        }
+    }
+}
+
+struct ClaimIterator {
+    x: u32,
+    x2: u32,
+    y: u32,
+    y2: u32,
+    yiter: u32,
+}
+
+impl Iterator for ClaimIterator {
+    type Item = (u32, u32);
+
+    fn next(&mut self) -> Option<(u32, u32)> {
+        /* current point */
+        let (x, y) = (self.x, self.yiter);
+        if self.x >= self.x2 || self.yiter >= self.y2 {
+            return None;
+        }
+        /* advance */
+        self.yiter += 1;
+        if self.yiter >= self.y2 {
+            self.yiter = self.y;
+            self.x += 1;
+        }
+        Some((x, y))
     }
 }
