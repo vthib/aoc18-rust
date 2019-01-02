@@ -22,31 +22,15 @@ fn main() -> Result<()> {
     /* sort all logs chronologically */
     logs.sort_unstable();
 
-    part1(&logs);
+    let map = build_guards_map(&logs);
+    part1(&map);
+    part2(&map);
     Ok(())
 }
 
 /* {{{ Part1 */
 
-struct GuardSleeping {
-    /* number of times a guard was sleeping, per minutes */
-    sleep_records: [u32; 60],
-    /* total number of minutes sleeping */
-    total_minutes: u32,
-}
-
-impl GuardSleeping {
-    fn add_sleepy_time(&mut self, start: u8, end: u8) {
-        self.total_minutes += (end - start) as u32;
-        for m in start..end {
-            self.sleep_records[m as usize] += 1;
-        }
-    }
-}
-
-fn part1(logs: &Vec<Log>) {
-    let map = build_guards_map(logs);
-
+fn part1(map: &HashMap<u32, GuardSleeping>) {
     let (guard_id, guard) = map
         .iter()
         .max_by_key(|&(_, guard)| guard.total_minutes)
@@ -64,6 +48,56 @@ fn part1(logs: &Vec<Log>) {
         minute_max.0,
         guard_id * (minute_max.0 as u32)
     );
+}
+
+/* }}} */
+/* {{{ Part2 */
+
+fn part2(map: &HashMap<u32, GuardSleeping>) {
+    /* guard with current max */
+    let mut max_guard_id = 0;
+    /* minute of guard with current max */
+    let mut max_minute = 0;
+    /* current max */
+    let mut max = 0;
+
+    /* across all guards and all minutes, find max */
+    for (guard_id, guard) in map {
+        for (minute_nb, val) in guard.sleep_records.iter().enumerate() {
+            if *val > max {
+                max_guard_id = *guard_id;
+                max_minute = minute_nb;
+                max = *val;
+            }
+        }
+    }
+
+    println!(
+        "day4, part2: guard_id: {}, minute: {}, value: {} => {}",
+        max_guard_id,
+        max_minute,
+        max,
+        max_guard_id * (max_minute as u32)
+    );
+}
+
+/* }}} */
+/* {{{ Guard map */
+
+struct GuardSleeping {
+    /* number of times a guard was sleeping, per minutes */
+    sleep_records: [u32; 60],
+    /* total number of minutes sleeping */
+    total_minutes: u32,
+}
+
+impl GuardSleeping {
+    fn add_sleepy_time(&mut self, start: u8, end: u8) {
+        self.total_minutes += (end - start) as u32;
+        for m in start..end {
+            self.sleep_records[m as usize] += 1;
+        }
+    }
 }
 
 fn build_guards_map(logs: &Vec<Log>) -> HashMap<u32, GuardSleeping> {
