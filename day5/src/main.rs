@@ -11,27 +11,30 @@ fn main() -> Result<()> {
     /* pop extra newline */
     input.pop();
 
-    let react = react(&input);
-    println!("day5, part1: sequence len: {:?}", react.len());
-
+    part1(&input);
     part2(&input);
     Ok(())
 }
 
-fn react(input: &str) -> String {
-    let mut seq = String::new();
-    for c in input.bytes() {
+fn part1(input: &str) {
+    let react_len = react(&input.as_bytes());
+    println!("day5, part1: sequence len: {:?}", react_len);
+}
+
+fn react(input: &[u8]) -> usize {
+    let mut seq = Vec::new();
+    for c in input {
         if seq.len() > 0 {
-            let prevc = seq.as_bytes()[seq.len() - 1];
+            let prevc = seq[seq.len() - 1];
             let diff = if c > prevc { c - prevc } else { prevc - c };
             if diff == 32 {
                 seq.pop();
                 continue;
             }
         }
-        seq.push(c as char);
+        seq.push(c);
     }
-    seq
+    seq.len()
 }
 
 fn part2(input: &str) {
@@ -43,7 +46,7 @@ fn part2(input: &str) {
             continue;
         }
         let polymer = polymer_without_unit(input, c);
-        let score = react(&polymer).len();
+        let score = react(&polymer);
         size_without.insert(c, score);
     }
 
@@ -51,12 +54,12 @@ fn part2(input: &str) {
     println!("day5, part2: min is {}", min);
 }
 
-fn polymer_without_unit(input: &str, unit: u8) -> String {
-    let mut polymer = String::new();
+fn polymer_without_unit(input: &str, unit: u8) -> Vec<u8> {
+    let mut polymer = Vec::new();
 
     for c in input.bytes() {
         if c.to_ascii_lowercase() != unit {
-            polymer.push(c as char);
+            polymer.push(c);
         }
     }
     polymer
