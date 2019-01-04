@@ -19,6 +19,7 @@ fn main() -> Result<()> {
     }
 
     part1(&points);
+    part2(&points);
     Ok(())
 }
 
@@ -75,6 +76,35 @@ fn part1(points: &Vec<Point>) {
         }
     }
     println!("day6, part1: max area: {}", max_area);
+}
+
+fn part2(points: &Vec<Point>) {
+    let (max_x, max_y) = compute_bounds(&points);
+    let mut grid = Vec::new();
+
+    /* build grid of sum of manhattan distances */
+    for x in 0..max_x {
+        let mut row: Vec<u32> = Vec::new();
+        for y in 0..max_y {
+            row.push(
+                points
+                    .iter()
+                    .map(|p| p.get_manhattan_distance(x, y))
+                    .sum()
+            );
+        }
+        grid.push(row);
+    }
+
+    let mut nb_safe = 0;
+    for row in &grid {
+        for sum_dist in row {
+            if *sum_dist < 10_000 {
+                nb_safe += 1;
+            }
+        }
+    }
+    println!("day6, part2: safe area: {}", nb_safe);
 }
 
 fn compute_bounds(points: &Vec<Point>) -> (u32, u32) {
