@@ -1,7 +1,8 @@
-use std::collections::{HashMap, BinaryHeap};
+use std::collections::{BinaryHeap, HashMap};
 use std::error::Error;
 use std::io;
 use std::io::Read;
+use std::iter::Iterator;
 use std::str::FromStr;
 
 use scan_fmt::scan_fmt;
@@ -23,35 +24,12 @@ fn main() -> Result<()> {
 }
 
 fn part1(graph: &Graph) {
-    /* map of node => number of dependencies */
-    let mut dep_map = HashMap::new();
-    /* priority queue for BFS */
-    let mut queue: BinaryHeap<&Node> = BinaryHeap::new();
-
-    for node in graph.map.values() {
-        if node.dep_nodes.len() == 0 {
-            /* add sources in queue */
-            queue.push(node);
-        } else {
-            dep_map.insert(node.name, node.dep_nodes.len());
-        }
-    }
-
     let mut res = String::new();
-    while let Some(node) = queue.pop() {
+    let mut walker = GraphWalker::new(&graph);
+
+    while let Some(node) = walker.queue.pop() {
         res.push(node.name);
-
-        /* push all new next nodes in queue */
-        for next in node.next_nodes.iter() {
-            let next_node = graph.map.get(&next).unwrap();
-            let nb_deps = dep_map.get_mut(&next_node.name).unwrap();
-
-            if *nb_deps == 1 {
-                queue.push(next_node);
-            } else {
-                *nb_deps -= 1;
-            }
-        }
+        walker.add_next_nodes(node);
     }
 
     println!("day7, part1: sequence is {}", res);
@@ -107,6 +85,53 @@ impl Graph {
     }
 }
 
+struct GraphWalker<'a> {
+    graph: &'a Graph,
+    dep_map: HashMap<char, usize>,
+    queue: BinaryHeap<&'a Node>,
+}
+
+impl<'a> GraphWalker<'a> {
+    fn new(graph: &'a Graph) -> Self {
+        /* map of node => number of dependencies */
+        let mut dep_map = HashMap::new();
+        /* priority queue for BFS */
+        let mut queue: BinaryHeap<&Node> = BinaryHeap::new();
+
+        for node in graph.map.values() {
+            if node.dep_nodes.len() == 0 {
+                /* add sources in queue */
+                queue.push(node);
+            } else {
+                dep_map.insert(node.name, node.dep_nodes.len());
+            }
+        }
+
+        GraphWalker {
+            graph,
+            dep_map,
+            queue,
+        }
+    }
+
+    fn add_next_nodes(&mut self, node: &Node) {
+        /* push all new next nodes in queue */
+        for next in node.next_nodes.iter() {
+            let next_node = self.graph.map.get(&next).unwrap();
+            let nb_deps = self.dep_map.get_mut(&next_node.name).unwrap();
+
+            if *nb_deps == 1 {
+                self.queue.push(next_node);
+            } else {
+                *nb_deps -= 1;
+            }
+        }
+    }
+}
+
+/* }}} */
+/* {{{ Dep */
+
 struct Dep {
     step: char,
     dep: char,
@@ -128,3 +153,5 @@ impl FromStr for Dep {
         })
     }
 }
+
+/* }}} */
