@@ -20,6 +20,7 @@ fn main() -> Result<()> {
 
     let graph = Graph::new(&deps);
     part1(&graph);
+    part2(&graph);
     Ok(())
 }
 
@@ -34,6 +35,102 @@ fn part1(graph: &Graph) {
 
     println!("day7, part1: sequence is {}", res);
 }
+
+fn part2(graph: &Graph) {
+    let mut workers = WorkersPool::new(5);
+    let mut processing_nodes: BinaryHeap<ProcessingEnd> = BinaryHeap::new();
+    let mut walker = GraphWalker::new(&graph);
+    let mut current_time = 0;
+
+    while walker.queue.len() > 0 || processing_nodes.len() > 0 {
+        /* advance in time to the next available worker */
+        let worker = workers.get_next_available_worker();
+        current_time = std::cmp::max(worker.available_at, current_time);
+
+        /* add next nodes for all nodes processed */
+        /* FIXME: there is probably a better way to pop conditionally */
+        while processing_nodes.len() > 0 {
+            if processing_nodes.peek().unwrap().finished_on <= current_time {
+                let p = processing_nodes.pop().unwrap();
+                walker.add_next_nodes(p.node);
+            } else {
+                break;
+            }
+        }
+
+        /* consume node available at that time */
+        match walker.queue.pop() {
+            Some(node) => {
+                let finished_on = current_time + node.processing_cost() + 60;
+                worker.available_at = finished_on;
+
+                processing_nodes.push(ProcessingEnd { node, finished_on });
+            },
+            None => {
+                /* no available node, advance until next processed node */
+                if let Some(p) = processing_nodes.peek() {
+                    current_time = p.finished_on;
+                }
+            }
+        }
+    }
+
+    /* the final time is when the last worker is done */
+    println!("day7, part2: total time is {}", workers.get_final_time());
+}
+
+/* {{{ WorkersPool */
+
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
+struct Worker {
+    /* indicate the next time the worker is available */
+    available_at: u32,
+}
+
+struct WorkersPool {
+    workers: Vec<Worker>,
+}
+
+impl WorkersPool {
+    fn new(nb_workers: u32) -> Self {
+        WorkersPool {
+            workers: vec![Worker { available_at: 0 }; nb_workers as usize],
+        }
+    }
+
+    fn get_next_available_worker(&mut self) -> &mut Worker {
+        self.workers.iter_mut().min().unwrap()
+    }
+
+    fn get_final_time(&self) -> u32 {
+        self.workers.iter().max().unwrap().available_at
+    }
+}
+
+/* }}} */
+/* {{{ ProcessingEnd */
+
+#[derive(Eq, PartialEq, Debug)]
+struct ProcessingEnd<'a> {
+    node: &'a Node,
+    finished_on: u32,
+}
+
+/* sort by name increasingly, for the priority queue */
+impl<'a> Ord for ProcessingEnd<'a> {
+    fn cmp(&self, other: &ProcessingEnd<'a>) -> std::cmp::Ordering {
+        other.finished_on.cmp(&self.finished_on)
+    }
+}
+
+impl<'a> PartialOrd for ProcessingEnd<'a> {
+    fn partial_cmp(&self, other: &ProcessingEnd<'a>) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/* }}} */
+/* {{{ Node */
 
 #[derive(Eq, PartialEq, Debug)]
 struct Node {
@@ -54,6 +151,15 @@ impl PartialOrd for Node {
         Some(self.cmp(other))
     }
 }
+
+impl Node {
+    fn processing_cost(&self) -> u32 {
+        (self.name as u32) - ('A' as u32) + 1
+    }
+}
+
+/* }}} */
+/* {{{ Graph */
 
 #[derive(Debug)]
 struct Graph {
