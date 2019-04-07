@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::io;
 use std::io::Read;
@@ -14,6 +15,7 @@ fn main() -> Result<()> {
     let root = Node::new(&mut iter);
 
     println!("day8, part1: total is {}", part1(&root));
+    println!("day8, part2: value is {}", root.value());
     Ok(())
 }
 
@@ -51,6 +53,31 @@ impl Node {
         Node {
             children,
             metadatas,
+        }
+    }
+
+    fn value(&self) -> u32 {
+        if self.children.len() == 0 {
+            self.metadatas.iter().sum()
+        } else {
+            let mut cache = HashMap::new();
+            let mut sum = 0;
+
+            for meta in self.metadatas.iter() {
+                let index = *meta - 1;
+                if let Some(child) = self.children.get(index as usize) {
+                    let value = match cache.get(&index) {
+                        Some(value) => *value,
+                        None => {
+                            let value = child.value();
+                            cache.insert(index, value);
+                            value
+                        }
+                    };
+                    sum += value;
+                }
+            };
+            sum
         }
     }
 }
