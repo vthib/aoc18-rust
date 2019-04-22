@@ -7,6 +7,12 @@ fn main() -> Result<()> {
     const FINAL_MARBLE: usize = 71250;
     const NB_PLAYERS: usize = 452;
 
+    println!("day9, part1: high score is {}", play_game(FINAL_MARBLE, NB_PLAYERS));
+    println!("day9, part2: high score is {}", play_game(FINAL_MARBLE * 100, NB_PLAYERS));
+    Ok(())
+}
+
+fn play_game(final_marble: usize, nb_players: usize) -> usize {
     let mut list = LinkedList::new();
     list.push_front(0);
     let mut cursor = list.cursor();
@@ -14,9 +20,9 @@ fn main() -> Result<()> {
     let mut next_marble = 1;
     let mut current_player = 0;
 
-    let mut scores = vec![0; NB_PLAYERS];
+    let mut scores = vec![0; nb_players];
 
-    while next_marble <= FINAL_MARBLE {
+    while next_marble <= final_marble {
         if next_marble % 23 == 0 {
             go_backward(&mut cursor, 7);
             let removed_marble = cursor.remove().unwrap();
@@ -34,13 +40,10 @@ fn main() -> Result<()> {
             cursor.insert(next_marble);
         }
         next_marble += 1;
-        current_player = (current_player + 1) % NB_PLAYERS;
+        current_player = (current_player + 1) % nb_players;
     }
 
-    let high_score = scores.iter().max().unwrap();
-
-    println!("day9, part1: high score is {}", high_score);
-    Ok(())
+    *scores.iter().max().unwrap()
 }
 
 /* The linked_list crate provides a cursor over a linked list, however the cursor does not handle
