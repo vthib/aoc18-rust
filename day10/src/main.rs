@@ -17,13 +17,12 @@ fn main() -> Result<()> {
         points.push(line.parse()?);
     }
 
-    part1(&mut points);
+    simulate_time(&mut points);
     Ok(())
 }
 
-/* {{{ part1 */
-
-fn part1(points: &mut Vec<Point>) {
+fn simulate_time(points: &mut Vec<Point>) {
+    let mut time = 0;
     let mut prev_width = 0;
     let mut prev_height = 0;
 
@@ -41,12 +40,14 @@ fn part1(points: &mut Vec<Point>) {
 
         // if bounding box is small enough, display the points
         if width < 100 && height < 100 {
+            println!("on second {}:", time);
             display_points(&points, xmin, width, ymin, height);
         }
 
         for p in points.iter_mut() {
             p.step();
         }
+        time += 1;
     }
 }
 
@@ -92,7 +93,6 @@ fn display_points(points: &Vec<Point>, xmin: i32, width: usize, ymin: i32, heigh
     println!();
 }
 
-/* }}} */
 /* {{{ Point */
 
 struct Point {
